@@ -1306,16 +1306,17 @@ def main():
     application = Application.builder().token(BOT_TOKEN).build()
 
     # Define states for conversation handlers
-    ADD_QUIZ_START = 0
-    GET_CUSTOM_ID = 1
-    QUESTION = 2  # Original QUESTION state
-    OPTIONS = 3   # Original OPTIONS state
-    ANSWER = 4    # Original ANSWER state
-    CLONE_URL = 5
-    EDIT_SELECT = 6
-    EDIT_QUESTION = 7
-    EDIT_OPTIONS = 8
-    EDIT_ANSWER = 9
+    # These need to be globally consistent
+    QUESTION = 1
+    OPTIONS = 2
+    ANSWER = 3
+    CLONE_URL = 4
+    EDIT_SELECT = 5
+    EDIT_QUESTION = 6
+    EDIT_OPTIONS = 7
+    EDIT_ANSWER = 8
+    ADD_QUIZ_START = 9
+    GET_CUSTOM_ID = 10
 
     # Add handlers
     application.add_handler(CommandHandler("start", start))
@@ -1370,7 +1371,7 @@ def main():
     application.add_handler(CallbackQueryHandler(handle_poll_to_quiz, pattern=r"^polltoquiz_"))
     application.add_handler(CallbackQueryHandler(handle_poll_id_selection, pattern=r"^pollid_"))
     
-    # Add handler for saving forwarded quizzes (if you have this feature)
+    # Add handler for saving forwarded quizzes
     application.add_handler(CommandHandler("saveforward", save_forward))
     
     # Add handler for general message handling (including forwarded polls)
@@ -1385,7 +1386,7 @@ def main():
     
     # Start the Bot
     application.run_polling()
-            
+
 def get_next_question_id():
     questions = load_questions()
     if not questions:
