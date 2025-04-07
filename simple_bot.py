@@ -588,8 +588,13 @@ async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def add_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Command to start adding a new quiz question"""
-    # Clear any existing user data
-    context.user_data.clear()
+    # Set conversation flag
+    context.user_data["conversation_active"] = True
+    
+    # Clear any existing user data from previous conversations
+    for key in list(context.user_data.keys()):
+        if key != "conversation_active":
+            context.user_data.pop(key)
     
     # Create buttons for ID selection
     keyboard = [
