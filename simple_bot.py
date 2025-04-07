@@ -724,11 +724,11 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return GET_ANSWER
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancel the quiz creation process"""
-    await update.message.reply_text(
-        "Quiz creation cancelled. Use /help to see available commands."
-    )
+    """Cancel the current operation"""
+    # Clear conversation flag
     context.user_data.clear()
+    
+    await update.message.reply_text("Operation cancelled.")
     return ConversationHandler.END
 
 async def list_quizzes(update: Update, context: ContextTypes.DEFAULT_TYPE):
