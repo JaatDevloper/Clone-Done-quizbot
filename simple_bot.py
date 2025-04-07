@@ -1108,7 +1108,7 @@ async def remove_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Updated button_callback function
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle button callbacks for quiz deletion confirmation"""
+    """Handle button callbacks for quiz deletion confirmation and ID selection"""
     query = update.callback_query
     await query.answer()
     
@@ -1119,13 +1119,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # User selected random ID
         await query.edit_message_text("You've selected a random ID. Please enter your question:")
         context.user_data["use_random_id"] = True
-        return GET_QUESTION
+        # Mark conversation as active to prevent handle_message from intercepting
+        context.user_data["conversation_active"] = True
+        return QUESTION  # Make sure this state value matches in main()
 
     elif callback_data == "id_custom":
         # User selected custom ID
         await query.edit_message_text("You've selected a custom ID. Please enter the ID number you want to use:")
         context.user_data["use_random_id"] = False
-        return GET_CUSTOM_ID  # New state for getting custom ID
+        # Mark conversation as active to prevent handle_message from intercepting
+        context.user_data["conversation_active"] = True
+        return GET_CUSTOM_ID  # Make sure this state value matches in main()
     
     # Handle timer duration selection
     elif callback_data.startswith("edittimer_"):
@@ -1233,6 +1237,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 # Store the question for editing
                 context.user_data["edit_question"] = question
+                # Mark conversation as active
+                context.user_data["conversation_active"] = True
                 
                 # Show edit options
                 keyboard = [
@@ -1299,7 +1305,16 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError, IndexError) as e:
             await query.edit_message_text(f"Error updating answer: {e}")
             return ConversationHandler.END
-
+    
+    # Add handlers for poll-to-quiz buttons if you have them
+    elif callback_data.startswith("polltoquiz_") or callback_data.startswith("pollid_"):
+        # These will be handled by their specific handlers in main()
+        pass
+    
+    # Handle any other button callbacks
+    else:
+        await query.edit_message_text("Unknown button action. Please try again.")
+            
 def main():
     """Start the bot"""
     # Create the Application
