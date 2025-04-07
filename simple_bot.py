@@ -2210,6 +2210,37 @@ async def edit_timer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     return EDIT_ANSWER
 
+async def get_custom_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle receiving the custom ID"""
+    try:
+        # Try to convert input to integer
+        custom_id = int(update.message.text.strip())
+        
+        # Check if ID already exists
+        questions = load_questions()
+        existing_ids = [q.get("id") for q in questions]
+        
+        if custom_id in existing_ids:
+            await update.message.reply_text(
+                f"ID {custom_id} already exists. You can:\n"
+                f"1. Enter a different ID\n"
+                f"2. Type /cancel to abort"
+            )
+            return GET_CUSTOM_ID
+        
+        # Store the custom ID
+        context.user_data["custom_id"] = custom_id
+        
+        # Proceed to get the question text
+        await update.message.reply_text("Please enter your question:")
+        return GET_QUESTION
+        
+    except ValueError:
+        await update.message.reply_text(
+            "Please enter a valid number for the ID. Try again or type /cancel to abort."
+        )
+        return GET_CUSTOM_ID
+
 
 
 
