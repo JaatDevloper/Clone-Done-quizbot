@@ -2182,7 +2182,7 @@ async def get_custom_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         
         # Proceed to get the question text
         await update.message.reply_text("Please enter your question:")
-        return GET_QUESTION
+        return QUESTION  # Make sure this matches your state values
         
     except ValueError:
         await update.message.reply_text(
