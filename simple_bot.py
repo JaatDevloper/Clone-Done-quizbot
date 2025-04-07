@@ -467,7 +467,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         timer_duration = first_question.get("timer_duration", 15)
         
         # Send the first question with timer animation
-        message = await context.bot.send_poll(
+        await context.bot.send_poll(
             chat_id=update.effective_chat.id,
             question=first_question["question"],
             options=first_question["options"],
@@ -478,16 +478,12 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
             open_period=timer_duration
         )
         
-        # Store the message for reference
-        context.user_data["last_question_message_id"] = message.message_id
-        
-        # Schedule the next question using the job queue
-        context.job_queue.run_once(
-            lambda job_context: asyncio.create_task(schedule_next_question(context)),
-            timer_duration + 3  # Wait for timer + 3 seconds buffer
-        )
-        
         await update.message.reply_text("Marathon mode started! Answer the questions as they appear.")
+        
+        # Start a task to schedule the next question
+        if context.user_data["marathon_questions"]:
+            asyncio.create_task(schedule_next_question(context))
+        
         return
     
     # Otherwise, try to get the question by ID
