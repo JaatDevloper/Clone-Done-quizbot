@@ -1080,8 +1080,21 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     callback_data = query.data
     
+    # Handle ID selection for adding quizzes
+    if callback_data == "id_random":
+        # User selected random ID
+        await query.edit_message_text("You've selected a random ID. Please enter your question:")
+        context.user_data["use_random_id"] = True
+        return GET_QUESTION
+
+    elif callback_data == "id_custom":
+        # User selected custom ID
+        await query.edit_message_text("You've selected a custom ID. Please enter the ID number you want to use:")
+        context.user_data["use_random_id"] = False
+        return GET_CUSTOM_ID  # New state for getting custom ID
+    
     # Handle timer duration selection
-    if callback_data.startswith("edittimer_"):
+    elif callback_data.startswith("edittimer_"):
         try:
             timer_duration = int(callback_data.split("_")[1])
             question = context.user_data.get("edit_question")
@@ -1252,7 +1265,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError, IndexError) as e:
             await query.edit_message_text(f"Error updating answer: {e}")
             return ConversationHandler.END
-
+            
 def main():
     """Start the bot"""
     # Create the Application
