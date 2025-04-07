@@ -524,7 +524,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "Invalid command format. Use /play for a random quiz, /play marathon for a sequence of quizzes, or /play [ID] for a specific quiz."
         )
-        
+
 async def schedule_next_question(context: ContextTypes.DEFAULT_TYPE):
     """Schedule the next question in the marathon mode after a delay"""
     # Check if we have remaining questions
@@ -543,8 +543,8 @@ async def schedule_next_question(context: ContextTypes.DEFAULT_TYPE):
     # Get the timer duration for the current question, default to 15 seconds
     timer_duration = question.get("timer_duration", 15)
     
-    # Add a slight delay between questions (3 seconds)
-    await asyncio.sleep(3)
+    # Add a fixed delay between questions (5 seconds)
+    await asyncio.sleep(timer_duration + 5)  # Wait for previous question timer + buffer
     
     # Send the question with timer animation
     message = await context.bot.send_poll(
@@ -558,19 +558,14 @@ async def schedule_next_question(context: ContextTypes.DEFAULT_TYPE):
         open_period=timer_duration
     )
     
-    # Store the message for reference
-    context.user_data["last_question_message_id"] = message.message_id
-    
     # Update the remaining questions
     context.user_data["marathon_questions"] = marathon_questions[1:]
     
-    # Schedule the next question using the job queue after the current timer expires
-    # This ensures we wait for the right amount of time
-    context.job_queue.run_once(
-        lambda job_context: asyncio.create_task(schedule_next_question(context)),
-        timer_duration + 3  # Add a 3-second buffer after the timer expires
-    )
-
+    # If there are more questions, schedule the next one
+    if context.user_data["marathon_questions"]:
+        # Use asyncio.create_task to schedule the next question
+        asyncio.create_task(schedule_next_question(context))
+        
 async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler for when a user answers a poll"""
     answer = update.poll_answer
