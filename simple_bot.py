@@ -1307,7 +1307,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
     
     # Add handlers for poll-to-quiz buttons if you have them
-    elif callback_data.startswith("polltoquiz_") or callback_data.startswith("pollid_"):
+    elif callback_data.startswith("polltoquiz_"):
         # These will be handled by their specific handlers in main()
         pass
     
