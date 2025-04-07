@@ -1294,11 +1294,23 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError, IndexError) as e:
             await query.edit_message_text(f"Error updating answer: {e}")
             return ConversationHandler.END
-            
+
 def main():
     """Start the bot"""
     # Create the Application
     application = Application.builder().token(BOT_TOKEN).build()
+
+    # Define states for conversation handlers
+    ADD_QUIZ_START = 0
+    GET_CUSTOM_ID = 1
+    QUESTION = 2  # Original QUESTION state
+    OPTIONS = 3   # Original OPTIONS state
+    ANSWER = 4    # Original ANSWER state
+    CLONE_URL = 5
+    EDIT_SELECT = 6
+    EDIT_QUESTION = 7
+    EDIT_OPTIONS = 8
+    EDIT_ANSWER = 9
 
     # Add handlers
     application.add_handler(CommandHandler("start", start))
@@ -1311,13 +1323,15 @@ def main():
     # Handle poll answers
     application.add_handler(PollHandler(handle_poll_answer))
     
-    # Add conversation handler for quiz creation
+    # Add conversation handler for quiz creation with ID selection
     add_quiz_conv = ConversationHandler(
         entry_points=[CommandHandler("add", add_quiz)],
         states={
+            ADD_QUIZ_START: [CallbackQueryHandler(button_callback)],
+            GET_CUSTOM_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_custom_id)],
             QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_question)],
             OPTIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_options)],
-            ANSWER: [CallbackQueryHandler(get_answer, pattern=r"^answer_")]
+            ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_answer)]
         },
         fallbacks=[CommandHandler("cancel", cancel)]
     )
@@ -1338,10 +1352,10 @@ def main():
     edit_quiz_conv = ConversationHandler(
         entry_points=[CommandHandler("edit", edit_quiz)],
         states={
-            EDIT_SELECT: [CallbackQueryHandler(lambda u, c: None, pattern=r"^edit_")],
-            EDIT_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, lambda update, context: None)],
-            EDIT_OPTIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, lambda update, context: None)],
-            EDIT_ANSWER: [CallbackQueryHandler(lambda u, c: None, pattern=r"^editanswer_")]
+            EDIT_SELECT: [CallbackQueryHandler(button_callback, pattern=r"^edit_")],
+            EDIT_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, edit_question_text)],
+            EDIT_OPTIONS: [MessageHandler(filters.TEXT & ~filters.COMMAND, edit_options)],
+            EDIT_ANSWER: [CallbackQueryHandler(button_callback, pattern=r"^editanswer_")]
         },
         fallbacks=[CommandHandler("cancel", cancel)]
     )
@@ -1361,13 +1375,12 @@ def main():
         handle_message
     ))
     
-    # Add callback query handler for button callbacks
+    # Add callback query handler for button callbacks (catch all non-specific buttons)
     application.add_handler(CallbackQueryHandler(button_callback))
     
     # Start the Bot
     application.run_polling()
-# Function to get the next available question ID
-
+            
 def get_next_question_id():
     questions = load_questions()
     if not questions:
