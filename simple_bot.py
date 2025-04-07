@@ -588,13 +588,23 @@ async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def add_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Command to start adding a new quiz question"""
+    # Clear any existing user data
+    context.user_data.clear()
+    
+    # Create buttons for ID selection
+    keyboard = [
+        [InlineKeyboardButton("Random ID", callback_data="id_random")],
+        [InlineKeyboardButton("Custom ID", callback_data="id_custom")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
     await update.message.reply_text(
-        "Let's create a new quiz question.\n\n"
-        "First, send me the question text.\n"
-        "For example: 'What is the capital of France?'\n\n"
-        "Type /cancel to abort."
+        "How would you like to assign an ID to this question?",
+        reply_markup=reply_markup
     )
-    return QUESTION
+    
+    return ADD_QUIZ_START
 
 async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle receiving the question text"""
