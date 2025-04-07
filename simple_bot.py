@@ -649,45 +649,74 @@ async def get_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle receiving the correct answer"""
-    query = update.callback_query
-    await query.answer()
+    if not context.user_data.get("options", []):
+        await update.message.reply_text("No options found. Please start again.")
+        return ConversationHandler.END
     
-    # Extract the answer index from callback data
-    answer_idx = int(query.data.split('_')[1])
-    
-    # Get the quiz data from user_data
-    question = context.user_data.get("quiz_question")
-    options = context.user_data.get("quiz_options")
-    
-    # Generate a new question ID
-    question_id = get_next_question_id()
-    
-    # Create new question dictionary
-    new_question = {
-        "id": question_id,
-        "question": question,
-        "options": options,
-        "answer": answer_idx,
-        "category": "User Created"
-    }
-    
-    # Add to questions file
-    questions = load_questions()
-    questions.append(new_question)
-    save_questions(questions)
-    
-    # Notify the user
-    await query.edit_message_text(
-        f"✅ Quiz question created successfully!\n\n"
-        f"Question: {question}\n"
-        f"Correct answer: {options[answer_idx]}\n\n"
-        f"Use /play to try it out or /add to create another."
-    )
-    
-    # Clear user data
-    context.user_data.clear()
-    
-    return ConversationHandler.END
+    try:
+        # Parse answer index (1-based in UI, 0-based in storage)
+        answer_index = int(update.message.text.strip()) - 1
+        options = context.user_data.get("options", [])
+        
+        # Validate answer index
+        if answer_index < 0 or answer_index >= len(options):
+            await update.message.reply_text(
+                f"Please enter a number between 1 and {len(options)}."
+            )
+            return GET_ANSWER
+        
+        # Get the question data
+        question_text = context.user_data.get("question", "")
+        options = context.user_data.get("options", [])
+        
+        # Load existing questions
+        questions = load_questions()
+        
+        # Use custom ID if selected, otherwise generate a random one
+        if context.user_data.get("use_random_id", True):
+            # Generate a random ID that doesn't exist yet
+            existing_ids = [q.get("id") for q in questions]
+            question_id = 1
+            while question_id in existing_ids:
+                question_id += 1
+        else:
+            # Use the custom ID provided by the user
+            question_id = context.user_data.get("custom_id")
+        
+        # Create the new question
+        new_question = {
+            "id": question_id,
+            "question": question_text,
+            "options": options,
+            "answer": answer_index,
+            "category": "Custom",
+            "timer_duration": 15  # Default timer duration
+        }
+        
+        # Add to list and save
+        questions.append(new_question)
+        save_questions(questions)
+        
+        # Provide feedback
+        await update.message.reply_text(
+            f"✅ Quiz question added successfully!\n\n"
+            f"ID: {question_id}\n"
+            f"Question: {question_text}\n"
+            f"Options: {', '.join(options)}\n"
+            f"Correct answer: {options[answer_index]}\n\n"
+            f"Use /play {question_id} to test it out."
+        )
+        
+        # Clear user data
+        context.user_data.clear()
+        
+        return ConversationHandler.END
+        
+    except ValueError:
+        await update.message.reply_text(
+            "Please enter a valid number for the correct answer."
+        )
+        return GET_ANSWER
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancel the quiz creation process"""
